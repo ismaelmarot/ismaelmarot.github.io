@@ -1,0 +1,71 @@
+name: Deploy portfolio to GitHub Pages
+
+# This repository is the one GitHub serves at https://ismaelmarot.github.io/, so it holds the
+# deployment workflow. The site source lives in ismaelmarot-web_2.0 and is checked out here,
+# which keeps this repository as pure output and the source repository as pure source.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the site source
+        uses: actions/checkout@v4
+        with:
+          repository: ismaelmarot/ismaelmarot-web_2.0
+          ref: main
+          path: site
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: site
+
+      - name: Fetch GitHub data
+        run: npm run fetch:github
+        working-directory: site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build project
+        run: npm run build
+        working-directory: site
+        env:
+          # Vite inlines VITE_* variables while building. Without this the contact form key is
+          # undefined in the deployed bundle even when it works locally, and the form renders
+          # its unavailable state in production only.
+          VITE_WEB3FORMS_ACCESS_KEY: ${{ secrets.VITE_WEB3FORMS_ACCESS_KEY }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
