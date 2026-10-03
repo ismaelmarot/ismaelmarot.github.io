@@ -52,11 +52,6 @@ jobs:
       - name: Build project
         run: npm run build
         working-directory: site
-        env:
-          # Vite inlines VITE_* variables while building. Without this the contact form key is
-          # undefined in the deployed bundle even when it works locally, and the form renders
-          # its unavailable state in production only.
-          VITE_WEB3FORMS_ACCESS_KEY: ${{ secrets.VITE_WEB3FORMS_ACCESS_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
