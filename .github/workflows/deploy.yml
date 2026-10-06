@@ -7,6 +7,14 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+  # Amendment 2. The contribution calendar is a build artefact, so it only refreshed when something
+  # was pushed, and FR-016 now compares each cell against the visitor's current date. Left without
+  # this, the comparison would keep describing a day that had already passed.
+  # 03:15 UTC is not an arbitrary hour. A reader in UTC-3 enters a new local day at 03:00 UTC, so
+  # this offset means there is never a moment when their own day is absent from the data, which is
+  # the one case that leaves the label unrendered under FR-017.
+  schedule:
+    - cron: '15 3 * * *'
 
 permissions:
   contents: read
