@@ -10,11 +10,25 @@ on:
   # Amendment 2. The contribution calendar is a build artefact, so it only refreshed when something
   # was pushed, and FR-016 now compares each cell against the visitor's current date. Left without
   # this, the comparison would keep describing a day that had already passed.
-  # 03:15 UTC is not an arbitrary hour. A reader in UTC-3 enters a new local day at 03:00 UTC, so
-  # this offset means there is never a moment when their own day is absent from the data, which is
-  # the one case that leaves the label unrendered under FR-017.
+  #
+  # Amendment 3 (specs/019-contribution-freshness). The hour this ran at was 03:15 UTC, and the
+  # reasoning for it was sound: a reader in UTC-3 enters a new local day at 03:00 UTC, so fetching just
+  # after that means their day is never absent from the data.
+  #
+  # Measured, it never ran at 03:15. GitHub's scheduler queues scheduled workflows, and the five most
+  # recent runs started at 08:37Z, 09:44Z, 09:55Z, 10:28Z and 10:40Z against a declared 03:15: a delay
+  # of five and a half to seven and a half hours, every time. So the fetch was landing six to eight
+  # hours INTO the reader's day rather than at its edge, and every contribution made after roughly
+  # 09:00 UTC waited a full day to appear. A visitor opening the page at 18:00 saw "sin contribuciones"
+  # about a day that had six.
+  #
+  # Every four hours shortens that window to something a person can reason about. It does not bound it,
+  # because the queue delay is GitHub's and not ours: a run can still start late, and a late run still
+  # means the data is old. That is why specs/019 also makes the page state the hour it read the
+  # calendar. The schedule reduces how often a visitor is misled. The label is what makes the site
+  # correct.
   schedule:
-    - cron: '15 3 * * *'
+    - cron: '15 */4 * * *'
 
 permissions:
   contents: read
